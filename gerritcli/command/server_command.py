@@ -33,7 +33,7 @@ class server_command(subcommand):
         self.server_default.add_argument('name', help = 'gerrit server name')
         self.server_default.set_defaults(server_func=self.default)
 
-    def handler(self, args):
+    def handler(self, args, client):
         args.server_func(args)
         return
 
@@ -58,5 +58,5 @@ class server_command(subcommand):
             print(format % (prefix, name, all[name]['host'], all[name]['username']))
         return
 
-    def default(self, args, client):
+    def default(self, args):
         gerrit_server.set_default(args.name)
