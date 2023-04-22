@@ -2,13 +2,12 @@
 # -*- coding:utf-8 -*-
 
 from gerritcli import subcommand
-from gerritcli import gerrit_server_config
+from gerritcli import gerrit_server
 # import gerritcli
 
 class server_command(subcommand):
     command = "server"
     help = "add/remove/list gerrit server info"
-    config = gerrit_server_config.get_config()
 
     def init_argument(self):
         self.server_subcmd = self.cmd_parser.add_subparsers(
@@ -39,20 +38,20 @@ class server_command(subcommand):
         return
 
     def add(self, args):
-        self.config.set_server(args.name, args.host, args.username, args.password)
+        gerrit_server.add(args.name, args.host, args.username, args.password)
         return
 
     def remove(self, args):
-        self.config.remove_server(args.name)
+        gerrit_server.remove(args.name)
         return
 
     def list(self, args):
-        all = self.config.get_all_server()
-        default = self.config.get_default()
+        all          = gerrit_server.get_all()
+        default_name = gerrit_server.get_default_name()
         format = "%s %-20s %-20s %-10s"
         print(format % (' ', 'name', 'host', 'username'))
         for name in all:
-            if name == default:
+            if name == default_name:
                 prefix = '*'
             else:
                 prefix = ' '
@@ -60,4 +59,4 @@ class server_command(subcommand):
         return
 
     def default(self, args):
-        self.config.set_default(args.name)
+        gerrit_server.set_default(args.name)
