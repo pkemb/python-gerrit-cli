@@ -165,7 +165,7 @@ class subcommand(ABC):
         return
 
     @abstractmethod
-    def handler(self, args):
+    def handler(self, args, client):
         pass
 
 import gerritcli.command

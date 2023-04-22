@@ -58,5 +58,5 @@ class server_command(subcommand):
             print(format % (prefix, name, all[name]['host'], all[name]['username']))
         return
 
-    def default(self, args):
+    def default(self, args, client):
         gerrit_server.set_default(args.name)

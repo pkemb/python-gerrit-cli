@@ -23,8 +23,17 @@ def main(argv):
         subcmd.init_subcmd(subparser)
 
     args = parser.parse_args()
+
+    server_name = args.server
+    if server_name is None:
+        server_name = gerritcli.gerrit_server.get_default_name()
+    if server_name is None:
+        print("please config server first")
+        return -1
+    client = gerritcli.gerrit_server.client(server_name)
+
     # call command handler
-    args.handler(args)
+    args.handler(args, client)
     return
 
 if __name__ == "__main__":
