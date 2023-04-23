@@ -70,6 +70,24 @@ class gerrit_server:
         return all
 
     @staticmethod
+    def get_host(name = None):
+        instance = gerrit_server.get_instance()
+        server = instance.get(name)
+        if server:
+            return server['host']
+        else:
+            return None
+
+    @staticmethod
+    def get_username(name = None):
+        instance = gerrit_server.get_instance()
+        server = instance.get(name)
+        if server:
+            return server['username']
+        else:
+            return None
+
+    @staticmethod
     def add(name, host, username, password, overwrite = False):
         """
         新增一个服务器

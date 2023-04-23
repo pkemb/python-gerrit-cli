@@ -14,6 +14,7 @@ def main(argv):
     parser.add_argument('-s',
             dest="server",
             help='specify gerrit server. If not specified, the default value is used',
+            default=gerritcli.gerrit_server.get_default_name(),
             required=False)
 
     # sub command
@@ -24,13 +25,10 @@ def main(argv):
 
     args = parser.parse_args()
 
-    server_name = args.server
-    if server_name is None:
-        server_name = gerritcli.gerrit_server.get_default_name()
-    if server_name is None:
+    if args.server is None:
         print("please config server first")
         return -1
-    client = gerritcli.gerrit_server.client(server_name)
+    client = gerritcli.gerrit_server.client(args.server)
 
     # call command handler
     args.handler(args, client)
