@@ -16,6 +16,12 @@ def main(argv):
             help='specify gerrit server. If not specified, the default value is used',
             default=gerritcli.gerrit_server.get_default_name(),
             required=False)
+    parser.add_argument('--debug',
+            dest="debug",
+            help='enable debug',
+            default=False,
+            action='store_true',
+            required=False)
 
     # sub command
     subparser = parser.add_subparsers(help='command usage', dest='command', metavar = "subcmd", required=True)
