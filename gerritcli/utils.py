@@ -51,3 +51,15 @@ support_format = show_handler.keys()
 def show(data, header = None, file = sys.stdout, format='table'):
     if format in show_handler:
         show_handler[format](data, header, file)
+
+def check_format(format):
+    if format not in support_format:
+        print("format %s not support" % (format), file=sys.stderr)
+        sys.exit(1)
+
+def check_header(header, support_header):
+    set_header  = set(header)
+    set_support = set(support_header)
+    if not set_header.issubset(set_support):
+        print("header \"%s\" not support" % (','.join(set_header - set_support)), file=sys.stderr)
+        sys.exit(1)
