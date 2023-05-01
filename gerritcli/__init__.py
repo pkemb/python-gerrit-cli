@@ -173,38 +173,53 @@ class gerrit_server:
             cls.__instance = cls()
         return cls.__instance
 
-class subcommand(ABC):
+class maincommand(ABC):
     __instance = None
 
     command = ""
     help = ""
-    cmd_parser = None
+    maincmd = None
+    subcmd_info = None
+    subcmd = dict()
+    subcmd_subparser = None
+
     def __init__(self, subparser):
         if self.command == "" or self.help == "":
             raise NotImplementedError
-        self.subparser = subparser
-        self.cmd_parser = self.subparser.add_parser(self.command, help=self.help)
-        self.cmd_parser.set_defaults(handler=self.handler)
+        self.maincmd_subparser = subparser
+        self.maincmd = self.maincmd_subparser.add_parser(self.command, help=self.help)
+        self.maincmd.set_defaults(handler=self.handler)
+
+        if self.subcmd_info:
+            self.subcmd_subparser = self.maincmd.add_subparsers(
+                                        help=self.help,
+                                        dest='subcmd',
+                                        required=True)
+            for cmd in self.subcmd_info:
+                helpstr = self.subcmd_info[cmd]['help']
+                handler = self.subcmd_info[cmd]['handler']
+                self.subcmd[cmd] = self.subcmd_subparser.add_parser(cmd, help=helpstr)
+                self.subcmd[cmd].set_defaults(handler=handler)
+
 
     @classmethod
-    def init_subcmd(cls, subparser):
+    def init(cls, subparser):
         if cls.__instance is None:
             cls.__instance = cls(subparser)
             cls.__instance.init_argument()
         return cls.__instance
 
     @classmethod
-    def get_subcmd(cls):
+    def get(cls):
         if cls.__instance is None:
-            print("sub command \"%s\" not init" % cls.command)
+            print("command \"%s\" not init" % cls.command)
             exit(1)
         return cls.__instance
 
     def init_argument(self):
         return
 
-    @abstractmethod
     def handler(self, args):
-        pass
+        return
 
 import gerritcli.command

@@ -1,9 +1,8 @@
 #!/usr/bin/python
 # -*- coding:utf-8 -*-
-from gerritcli import subcommand
 import gerritcli
 
-class version_command(subcommand):
+class version_command(gerritcli.maincommand):
     """
     打印gerrit服务器版本
     """

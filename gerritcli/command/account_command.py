@@ -1,14 +1,13 @@
 #!/usr/bin/python
 # -*- coding:utf-8 -*-
 
-from gerritcli import subcommand
 import gerrit.utils.exceptions
 from copy import deepcopy
 import gerritcli.utils
 import gerritcli
 import sys
 
-class account_command(subcommand):
+class account_command(gerritcli.maincommand):
     """
     ...
     """
@@ -29,43 +28,46 @@ class account_command(subcommand):
         "registered_on": ""
     }
 
-    def init_argument(self):
-        self.subcmd = self.cmd_parser.add_subparsers(
-                                help='',
-                                dest='change_command',
-                                required=True)
+    def __init__(self, subparser):
+        self.subcmd_info = {
+            "search": {
+                "handler": self.get_search_handler,
+                "help": 'Queries accounts visible to the caller.'
+            },
+            "get": {
+                "handler": self.get_search_handler,
+                "help": 'get account'
+            },
+            "create": {
+                "handler": self.create_handler,
+                "help": 'create account'
+            }
+        }
+        super().__init__(subparser)
 
-        self.subcmd_search = self.subcmd.add_parser('search', help = 'Queries accounts visible to the caller.')
-        self.subcmd_search.set_defaults(handler=self.get_search)
-        self.subcmd_search.add_argument('query',
-                                         help='query string')
-        self.subcmd_get = self.subcmd.add_parser('get', help = 'get account')
-        self.subcmd_get.set_defaults(handler=self.get_search)
-        self.subcmd_get.add_argument('userids',
+    def init_argument(self):
+        self.subcmd['search'].add_argument('query', help='query string')
+        self.subcmd['get'].add_argument('userids',
                                       help='account id or name',
                                       nargs='+',
                                       default=['self'])
 
-        for parser in [self.subcmd_search, self.subcmd_get]:
-            parser.add_argument('--output', '-o',
+        for cmd in [self.subcmd['search'], self.subcmd['get']]:
+            cmd.add_argument('--output', '-o',
                                 dest='output_file',
                                 help='output to file, not stdout',
                                 default=None, required=False)
-            parser.add_argument('--header',
+            cmd.add_argument('--header',
                                 dest='header',
                                 help='output header, when output format is csv / table',
                                 default=None, required=False)
-            parser.add_argument('--format',
+            cmd.add_argument('--format',
                                 dest='format',
                                 help='output format, json / csv / table',
                                 default='table', required=False)
 
-        self.subcmd_create = self.subcmd.add_parser('create', help = 'create account')
-        self.subcmd_create.set_defaults(handler=self.create)
+        # subcmd create no argument
         return
-
-    def handler(self, args):
-        pass
 
     def get_account(self, userid, cache = True):
         """
@@ -122,7 +124,7 @@ class account_command(subcommand):
             accounts.append(self.get_account(account_id))
         return accounts
 
-    def get_search(self, args):
+    def get_search_handler(self, args):
         header = None
         if args.header:
             header = args.header.split(',')
@@ -134,14 +136,14 @@ class account_command(subcommand):
         else:
             f = sys.stdout
 
-        if args.change_command == 'search':
+        if args.subcmd == 'search':
             accounts = self.search_account(args.query)
-        elif args.change_command == 'get':
+        elif args.subcmd == 'get':
             accounts = list()
             for userid in args.userids:
                 accounts.append(self.get_account(userid, cache=True))
         else:
-            print("unknow subcmd %s" % change_command, file=sys.stderr)
+            print("unknow subcmd %s" % args.subcmd, file=sys.stderr)
             sys.exit(1)
 
         gerritcli.utils.show(accounts, header = header, format=args.format, file = f)
@@ -149,5 +151,5 @@ class account_command(subcommand):
             f.close()
         return
 
-    def create(self, args):
+    def create_handler(self, args):
         print("TODO")

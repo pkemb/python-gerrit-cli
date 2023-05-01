@@ -23,11 +23,11 @@ def main(argv):
             action='store_true',
             required=False)
 
-    # sub command
-    subparser = parser.add_subparsers(help='command usage', dest='command', metavar = "subcmd", required=True)
+    # main command
+    subparser = parser.add_subparsers(help='command usage', dest='command', metavar = "command", required=True)
     # call all child init function for add sub command
-    for subcmd in gerritcli.subcommand.__subclasses__():
-        subcmd.init_subcmd(subparser)
+    for cmd in gerritcli.maincommand.__subclasses__():
+        cmd.init(subparser)
 
     args = parser.parse_args()
 

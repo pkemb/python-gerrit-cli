@@ -1,39 +1,45 @@
 #!/usr/bin/python
 # -*- coding:utf-8 -*-
-from gerritcli import subcommand
 from gerritcli import gerrit_server
 import gerritcli
 import json
 
-class project_command(subcommand):
+class project_command(gerritcli.maincommand):
     """
     list / search / create / delete project
     """
     command = "project"
     help = "project command"
 
-    def init_argument(self):
-        self.subcmd = self.cmd_parser.add_subparsers(
-                                help='',
-                                dest='project_command',
-                                required=True)
+    def __init__(self, subparser):
+        self.subcmd_info = {
+            "list": {
+                "handler": self.list_handler,
+                "help": 'list project info'
+            },
+            "search": {
+                "handler": self.search_handler,
+                "help": 'search project'
+            },
+            "create": {
+                "handler": self.create_handler,
+                "help": 'create project'
+            },
+            "delete": {
+                "handler": self.delete_handler,
+                "help": 'delete project'
+            }
+        }
+        super().__init__(subparser)
 
-        self.subcmd_list = self.subcmd.add_parser('list', help = 'list project info')
-        self.subcmd_list.add_argument('--urltype',
+    def init_argument(self):
+        self.subcmd['list'].add_argument('--urltype',
                                         dest='urltype',
                                         help='project url type, can be \'clone\' \'gitiles\', default value is \'clone\'',
                                         default='clone',
                                         required=False)
-        self.subcmd_list.set_defaults(project_handler=self.list)
 
-        self.subcmd_search = self.subcmd.add_parser('search', help = 'search project')
-        self.subcmd_search.set_defaults(project_handler=self.search)
-
-        self.subcmd_create = self.subcmd.add_parser('create', help = 'create project')
-        self.subcmd_create.set_defaults(project_handler=self.create)
-
-        self.subcmd_delete = self.subcmd.add_parser('delete', help = 'delete project')
-        self.subcmd_delete.set_defaults(project_handler=self.delete)
+        # subcmd search / create / delete no argument
         return
 
     def get_project_url(self, server, web_links, urltype):
@@ -51,7 +57,7 @@ class project_command(subcommand):
                 return ""
         return None
 
-    def list(self, args):
+    def list_handler(self, args):
         """
         列出gerrit服务器上所有的project
         待实现的选项：isall / limit / skip / project_type / description / branch / state
@@ -63,14 +69,12 @@ class project_command(subcommand):
             print(self.get_project_url(args.server, web_links, args.urltype))
         return True
 
-    def search(self, args):
+    def search_handler(self, args):
         print("TODO")
 
-    def create(self, args):
+    def create_handler(self, args):
         print("TODO")
 
-    def delete(self, args):
+    def delete_handler(self, args):
         print("TODO")
 
-    def handler(self, args):
-        return args.project_handler(args)
