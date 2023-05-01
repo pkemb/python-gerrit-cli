@@ -85,9 +85,11 @@ class gerrit_server:
         获取所有服务器的详细信息
         """
         instance = gerrit_server.get_instance()
-        all = {}
+        all = []
         for name in instance.config.sections():
-            all[name] = dict(instance.config[name])
+            server = dict(instance.config[name])
+            server['name'] = name
+            all.append(server)
         return all
 
     @staticmethod
