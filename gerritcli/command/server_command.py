@@ -52,14 +52,14 @@ class server_command(gerritcli.maincommand):
     def list_handler(self, args):
         all          = gerrit_server.get_all()
         default_name = gerrit_server.get_default_name()
-        format = "%s %-20s %-20s %-10s"
-        print(format % (' ', 'name', 'host', 'username'))
-        for name in all:
-            if name == default_name:
-                prefix = '*'
+
+        for server in all:
+            if server['name'] == default_name:
+                server['default'] = 'yes'
             else:
-                prefix = ' '
-            print(format % (prefix, name, all[name]['host'], all[name]['username']))
+                server['default'] = ''
+
+        gerritcli.utils.show(all, header = ['name', 'username', 'host', 'default'])
         return
 
     def default_handler(self, args):
