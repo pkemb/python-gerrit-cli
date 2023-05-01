@@ -34,7 +34,7 @@ def main(argv):
     if args.server is None:
         print("please config server first")
         return -1
-    client = gerritcli.gerrit_server.client(args.server)
+    client = gerritcli.gerrit_server.login(args.server)
 
     # call command handler
     args.handler(args)

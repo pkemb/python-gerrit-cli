@@ -5,6 +5,8 @@ import sys
 import configparser
 from abc import ABC, abstractmethod
 from gerrit import GerritClient
+import gerrit
+import requests
 
 class gerrit_server:
     __instance = None
@@ -21,7 +23,7 @@ class gerrit_server:
         return
 
     @staticmethod
-    def client(name = None):
+    def login(name = None):
         """
         登录服务器，返回client
         """
@@ -34,6 +36,15 @@ class gerrit_server:
                     base_url=server['host'],
                     username=server['username'],
                     password=server['password'])
+        try:
+            version = client.version
+        except requests.exceptions.MissingSchema as e:
+            print("invalid host %s.\n%s" % (instance.get_host(name), str(e)))
+            sys.exit(1)
+        except gerrit.utils.exceptions.UnauthorizedError as e:
+            print("login fail, please check username and http password!!!")
+            sys.exit(1)
+
         instance.gerrit_client = client
         return client
 
