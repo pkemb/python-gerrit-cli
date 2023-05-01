@@ -37,7 +37,7 @@ def main(argv):
     client = gerritcli.gerrit_server.client(args.server)
 
     # call command handler
-    args.handler(args, client)
+    args.handler(args)
     return
 
 if __name__ == "__main__":

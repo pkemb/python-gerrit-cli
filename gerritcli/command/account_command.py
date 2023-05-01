@@ -5,6 +5,7 @@ from gerritcli import subcommand
 import gerrit.utils.exceptions
 from copy import deepcopy
 import gerritcli.utils
+import gerritcli
 import sys
 
 class account_command(subcommand):
@@ -63,10 +64,10 @@ class account_command(subcommand):
         self.subcmd_create.set_defaults(handler=self.create)
         return
 
-    def handler(self, args, client):
+    def handler(self, args):
         pass
 
-    def get_account(self, client, userid, cache = True):
+    def get_account(self, userid, cache = True):
         """
         Documentation/rest-api-accounts.html#account-info
         """
@@ -80,6 +81,7 @@ class account_command(subcommand):
                 return self.cache_by_email[userid]
 
         is_found = True
+        client = gerritcli.gerrit_server.get_client()
         try:
             gerrit_account = client.accounts.get(userid, detailed=True)
             account_info = gerrit_account.to_dict()
@@ -108,18 +110,19 @@ class account_command(subcommand):
                 self.cache_by_email[account_info['email']] = account_info
         return account_info
 
-    def search_account(self, client, query):
+    def search_account(self, query):
         """
         Documentation/user-search-accounts.html#_search_operators
         """
+        client = gerritcli.gerrit_server.get_client()
         accounts_info = client.accounts.search(query)
         accounts = list()
         for info in accounts_info:
             account_id = info['_account_id']
-            accounts.append(self.get_account(client, account_id))
+            accounts.append(self.get_account(account_id))
         return accounts
 
-    def get_search(self, args, client):
+    def get_search(self, args):
         header = None
         if args.header:
             header = args.header.split(',')
@@ -132,11 +135,11 @@ class account_command(subcommand):
             f = sys.stdout
 
         if args.change_command == 'search':
-            accounts = self.search_account(client, args.query)
+            accounts = self.search_account(args.query)
         elif args.change_command == 'get':
             accounts = list()
             for userid in args.userids:
-                accounts.append(self.get_account(client, userid, cache=True))
+                accounts.append(self.get_account(userid, cache=True))
         else:
             print("unknow subcmd %s" % change_command, file=sys.stderr)
             sys.exit(1)
@@ -146,5 +149,5 @@ class account_command(subcommand):
             f.close()
         return
 
-    def create(self, args, client):
+    def create(self, args):
         print("TODO")

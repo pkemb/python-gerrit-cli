@@ -2,6 +2,7 @@
 # -*- coding:utf-8 -*-
 from gerritcli import subcommand
 from gerritcli import gerrit_server
+import gerritcli
 import json
 
 class project_command(subcommand):
@@ -50,25 +51,26 @@ class project_command(subcommand):
                 return ""
         return None
 
-    def list(self, args, client):
+    def list(self, args):
         """
         列出gerrit服务器上所有的project
         待实现的选项：isall / limit / skip / project_type / description / branch / state
         """
+        client = gerritcli.gerrit_server.get_client()
         projects = client.projects.list()
         for prj in projects:
             web_links = projects[prj]['web_links']
             print(self.get_project_url(args.server, web_links, args.urltype))
         return True
 
-    def search(self, args, client):
+    def search(self, args):
         print("TODO")
 
-    def create(self, args, client):
+    def create(self, args):
         print("TODO")
 
-    def delete(self, args, client):
+    def delete(self, args):
         print("TODO")
 
-    def handler(self, args, client):
-        return args.project_handler(args, client)
+    def handler(self, args):
+        return args.project_handler(args)

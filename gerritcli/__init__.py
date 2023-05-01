@@ -1,6 +1,7 @@
 #!/usr/bin/env python
 
 import os
+import sys
 import configparser
 from abc import ABC, abstractmethod
 from gerrit import GerritClient
@@ -8,7 +9,7 @@ from gerrit import GerritClient
 class gerrit_server:
     __instance = None
     gerrit_rc = os.path.join(os.environ['HOME'], '.gerrit.rc')
-    client = dict()
+    gerrit_client = None
 
     def __init__(self) -> None:
         self.config = configparser.ConfigParser()
@@ -33,7 +34,16 @@ class gerrit_server:
                     base_url=server['host'],
                     username=server['username'],
                     password=server['password'])
+        instance.gerrit_client = client
         return client
+
+    @staticmethod
+    def get_client():
+        instance = gerrit_server.get_instance()
+        if instance.gerrit_client is None:
+            print("no login", file=sys.stderr)
+            sys.exit(1)
+        return instance.gerrit_client
 
     @staticmethod
     def get(name = None):
@@ -183,7 +193,7 @@ class subcommand(ABC):
         return
 
     @abstractmethod
-    def handler(self, args, client):
+    def handler(self, args):
         pass
 
 import gerritcli.command

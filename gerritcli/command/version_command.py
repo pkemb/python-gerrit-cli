@@ -1,6 +1,7 @@
 #!/usr/bin/python
 # -*- coding:utf-8 -*-
 from gerritcli import subcommand
+import gerritcli
 
 class version_command(subcommand):
     """
@@ -18,5 +19,6 @@ class version_command(subcommand):
         return True
 
 
-    def handler(self, args, client):
+    def handler(self, args):
+        client = gerritcli.gerrit_server.get_client()
         return self.version(client)

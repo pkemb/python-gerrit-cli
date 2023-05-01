@@ -33,7 +33,7 @@ class server_command(subcommand):
         self.server_default.add_argument('name', help = 'gerrit server name')
         self.server_default.set_defaults(server_func=self.default)
 
-    def handler(self, args, client):
+    def handler(self, args):
         args.server_func(args)
         return
 
