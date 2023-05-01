@@ -25,7 +25,8 @@ class account_command(gerritcli.maincommand):
         "status": "",
         "active": "",
         "tags": "",
-        "registered_on": ""
+        "registered_on": "",
+        "display_name": ""
     }
 
     def __init__(self, subparser):
@@ -104,6 +105,8 @@ class account_command(gerritcli.maincommand):
             account_info['email'] = self.empty_account['email']
         if "tags" not in account_info:
             account_info['tags'] = self.empty_account['tags']
+        if "display_name" not in account_info:
+            account_info['display_name'] = self.empty_account['display_name']
 
         if cache and is_found:
             self.cache_by_id[account_info['id']] = account_info
