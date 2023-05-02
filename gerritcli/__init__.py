@@ -7,6 +7,7 @@ from abc import ABC, abstractmethod
 from gerrit import GerritClient
 import gerrit
 import requests
+import gerritcli.utils
 
 class gerrit_server:
     __instance = None
