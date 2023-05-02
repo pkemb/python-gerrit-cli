@@ -3,9 +3,42 @@
 
 import gerrit.utils.exceptions
 from copy import deepcopy
-import gerritcli.utils
 import gerritcli
 import sys
+from gerritcli.utils import utc2local
+
+empty_account = {
+    "id": None,
+    "name": "",
+    "email": "",
+    "username": "",
+    "status": "",
+    "active": "",
+    "tags": "",
+    "registered_on": "",
+    "display_name": ""
+}
+
+class gerrit_account_info(gerritcli.utils.gerrit_info):
+    """
+    Documentation/rest-api-accounts.html#account-info
+    """
+
+    def __init__(self, account, **kwargs):
+        self.content['id']            = account.get('_account_id', empty_account['id'])
+        if account['registered_on'] == empty_account['registered_on']:
+            self.content['registered_on'] = account['registered_on']
+        else:
+            self.content['registered_on'] = utc2local(account['registered_on'])
+        self.content['username']      = account['username']
+        self.content['name']          = account['name']
+
+        self.content['email']        = account.get('email',        empty_account['email'])
+        self.content['tags']         = account.get('tags',         empty_account['tags'])
+        self.content['display_name'] = account.get('display_name', empty_account['display_name'])
+        self.content['status']       = kwargs.get('status', empty_account['status'])
+        self.content['active']       = kwargs.get('active', empty_account['active'])
+        super().__init__(**kwargs)
 
 class account_command(gerritcli.maincommand):
     """
@@ -13,30 +46,19 @@ class account_command(gerritcli.maincommand):
     """
     command = "account"
     help = "account command help"
-    accounts_cache = dict() # id cache / username cache / email cache
     cache_by_id = dict()
     cache_by_username = dict()
     cache_by_email = dict()
-    empty_account = {
-        "id": None,
-        "name": "",
-        "email": "",
-        "username": "",
-        "status": "",
-        "active": "",
-        "tags": "",
-        "registered_on": "",
-        "display_name": ""
-    }
+    account_header = 'id,username,email,status,active'
 
     def __init__(self, subparser):
         self.subcmd_info = {
             "search": {
-                "handler": self.get_search_handler,
+                "handler": self.search_handler,
                 "help": 'Queries accounts visible to the caller.'
             },
             "get": {
-                "handler": self.get_search_handler,
+                "handler": self.get_handler,
                 "help": 'get account'
             },
             "create": {
@@ -61,7 +83,7 @@ class account_command(gerritcli.maincommand):
             cmd.add_argument('--header',
                                 dest='header',
                                 help='output header, when output format is csv / table',
-                                default=None, required=False)
+                                default=self.account_header, required=False)
             cmd.add_argument('--format',
                                 dest='format',
                                 help='output format, json / csv / table',
@@ -87,32 +109,25 @@ class account_command(gerritcli.maincommand):
         client = gerritcli.gerrit_server.get_client()
         try:
             gerrit_account = client.accounts.get(userid, detailed=True)
-            account_info = gerrit_account.to_dict()
-            account_info['status'] = gerrit_account.get_status()
-            account_info['active'] = gerrit_account.get_active()
-            account_info['id']     = account_info['_account_id']
-            account_info['registered_on'] = \
-                    gerritcli.utils.utc2local(account_info['registered_on'])
+            account = gerrit_account.to_dict()
+            status = gerrit_account.get_status()
+            active = gerrit_account.get_active()
 
-            del account_info['_account_id']
-            del account_info['secondary_emails']
+            account_info = gerrit_account_info(account, status = status, active = active)
 
         except gerrit.utils.exceptions.NotFoundError:
-            print("%s not found" % userid, file=sys.stderr)
             is_found = False
-            account_info = deepcopy(self.empty_account)
-        if "email" not in account_info:
-            account_info['email'] = self.empty_account['email']
-        if "tags" not in account_info:
-            account_info['tags'] = self.empty_account['tags']
-        if "display_name" not in account_info:
-            account_info['display_name'] = self.empty_account['display_name']
+            account_info = gerrit_account_info(empty_account,
+                                                id = userid,
+                                                name = userid,
+                                                username = userid,
+                                                status = 'not found')
 
         if cache and is_found:
-            self.cache_by_id[account_info['id']] = account_info
-            self.cache_by_username[account_info['username']] = account_info
-            if account_info['email'] != self.empty_account['email']:
-                self.cache_by_email[account_info['email']] = account_info
+            self.cache_by_id[account_info.id] = account_info
+            self.cache_by_username[account_info.username] = account_info
+            if account_info.email != empty_account['email']:
+                self.cache_by_email[account_info.email] = account_info
         return account_info
 
     def search_account(self, query):
@@ -127,32 +142,28 @@ class account_command(gerritcli.maincommand):
             accounts.append(self.get_account(account_id))
         return accounts
 
-    def get_search_handler(self, args):
-        header = None
-        if args.header:
-            header = args.header.split(',')
-            gerritcli.utils.check_header(header, self.empty_account.keys())
-        gerritcli.utils.check_format(args.format)
+    def get_handler(self, args):
+        header = args.header.split(',')
+        accounts = list()
+        for userid in args.userids:
+            accounts.append(self.get_account(userid, cache=True))
 
-        if args.output_file:
-            f = open(args.output_file, 'w')
-        else:
-            f = sys.stdout
-
-        if args.subcmd == 'search':
-            accounts = self.search_account(args.query)
-        elif args.subcmd == 'get':
-            accounts = list()
-            for userid in args.userids:
-                accounts.append(self.get_account(userid, cache=True))
-        else:
-            print("unknow subcmd %s" % args.subcmd, file=sys.stderr)
-            sys.exit(1)
-
-        gerritcli.utils.show(accounts, header = header, format=args.format, file = f)
-        if args.output_file:
-            f.close()
+        gerritcli.utils.show_info(
+            accounts,
+            header   = header,
+            filename = args.output_file,
+            format   = args.format)
         return
+
+    def search_handler(self, args):
+        header = args.header.split(',')
+        accounts = self.search_account(args.query)
+
+        gerritcli.utils.show_info(
+            accounts,
+            header   = header,
+            filename = args.output_file,
+            format   = args.format)
 
     def create_handler(self, args):
         print("TODO")
