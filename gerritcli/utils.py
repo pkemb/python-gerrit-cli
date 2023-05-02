@@ -7,6 +7,7 @@ import time
 import json
 import sys
 import csv
+from copy import deepcopy
 
 now = time.time()
 utc_offset = datetime.fromtimestamp(now) - datetime.utcfromtimestamp(now)
@@ -58,8 +59,45 @@ def check_format(format):
         sys.exit(1)
 
 def check_header(header, support_header):
+    if header is None:
+        return
     set_header  = set(header)
     set_support = set(support_header)
     if not set_header.issubset(set_support):
         print("header \"%s\" not support" % (','.join(set_header - set_support)), file=sys.stderr)
         sys.exit(1)
+
+def show_info(infos, header = None , filename = None, format = 'table'):
+    """
+    :param infos: gerrit_info 类组成的列表
+    :param header: 表头列表，可以为None
+    :param filename: 重定向输出的文件
+    :param format: 输出格式，支持 table / json / csv
+    """
+    check_format(format)
+    check_header(header, infos[0].to_dict().keys())
+
+    if filename:
+        f = open(filename, 'w')
+    else:
+        f = sys.stdout
+
+    show([i.to_dict() for i in infos], header = header, file = f, format=format)
+
+    if filename:
+        f.close()
+    return
+
+class gerrit_info():
+    content = dict()
+    def __init__(self, **kwargs):
+        self.content.update(kwargs)
+        self.content = deepcopy(self.content)
+        for key, value in self.content.items():
+            try:
+                setattr(self, key, value)
+            except AttributeError:
+                pass
+
+    def to_dict(self):
+        return self.content
