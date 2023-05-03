@@ -62,26 +62,11 @@ class project_command(gerritcli.maincommand):
     def init_argument(self):
         self.subcmd['search'].add_argument('query', help='set query condition', nargs='+')
         for cmd in [self.subcmd['list'], self.subcmd['search']]:
-            cmd.add_argument('--output', '-o',
-                                dest='output_file',
-                                help='output to file, not stdout',
-                                default=None, required=False)
-            cmd.add_argument('--header',
-                                dest='header',
-                                help='output header, when output format is csv / table',
-                                default=self.project_header, required=False)
-            cmd.add_argument('--format',
-                                dest='format',
-                                help='output format, json / csv / table',
-                                default='table', required=False)
-            cmd.add_argument('--limit',
-                                dest = 'limit',
-                                help = 'limit the search result',
-                                type = int, default = None, required=False)
-            cmd.add_argument('--skip',
-                                dest = 'skip',
-                                help = 'skip the number of result',
-                                type = int, default = None, required=False)
+            gerritcli.utils.add_commmon_argument(cmd, 'output')
+            gerritcli.utils.add_commmon_argument(cmd, 'header', default = self.project_header)
+            gerritcli.utils.add_commmon_argument(cmd, 'format')
+            gerritcli.utils.add_commmon_argument(cmd, 'limit')
+            gerritcli.utils.add_commmon_argument(cmd, 'skip')
 
         # subcmd create / delete no argument
         return

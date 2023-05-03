@@ -103,27 +103,20 @@ class change_command(gerritcli.maincommand):
         self.subcmd['search'].add_argument('query', help='set query condition', nargs='+')
         self.subcmd['get'].add_argument('id', help='change id or change number', nargs='+')
         for cmd in [self.subcmd['search'], self.subcmd['get']]:
-            cmd.add_argument('--output', '-o',
-                                    dest='output_file',
-                                    help='output to file, not stdout',
-                                    default=None, required=False)
-            cmd.add_argument('--header',
-                                    dest='header',
-                                    help='output header, when output format is csv / table',
-                                    default=self.search_default_header, required=False)
-            cmd.add_argument('--format',
-                                    dest='format',
-                                    help='output format, json / csv / table',
-                                    default='table', required=False)
+            gerritcli.utils.add_commmon_argument(cmd, 'output')
+            gerritcli.utils.add_commmon_argument(cmd, 'header', default = self.search_default_header)
+            gerritcli.utils.add_commmon_argument(cmd, 'format')
 
+        gerritcli.utils.add_commmon_argument(self.subcmd['search'], 'limit')
+        gerritcli.utils.add_commmon_argument(self.subcmd['search'], 'skip')
 
         # subcmd create / delete no argument
         return
 
-    def search_change(self, query):
+    def search_change(self, query, **kwargs):
         try:
             client = gerritcli.gerrit_server.get_client()
-            changes = client.changes.search(query)
+            changes = client.changes.search(query, **kwargs)
             changes_info = list()
             for change in changes:
                 changes_info.append(gerrit_change_info(change))
@@ -146,7 +139,7 @@ class change_command(gerritcli.maincommand):
         header = args.header.split(",")
         changes = list()
         for q in args.query:
-            changes += self.search_change(q)
+            changes += self.search_change(q, limit=args.limit, skip=args.skip)
 
         gerritcli.utils.show_info(
             changes,

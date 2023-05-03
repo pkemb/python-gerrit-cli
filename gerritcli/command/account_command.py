@@ -76,18 +76,12 @@ class account_command(gerritcli.maincommand):
                                       default=['self'])
 
         for cmd in [self.subcmd['search'], self.subcmd['get']]:
-            cmd.add_argument('--output', '-o',
-                                dest='output_file',
-                                help='output to file, not stdout',
-                                default=None, required=False)
-            cmd.add_argument('--header',
-                                dest='header',
-                                help='output header, when output format is csv / table',
-                                default=self.account_header, required=False)
-            cmd.add_argument('--format',
-                                dest='format',
-                                help='output format, json / csv / table',
-                                default='table', required=False)
+            gerritcli.utils.add_commmon_argument(cmd, 'output')
+            gerritcli.utils.add_commmon_argument(cmd, 'header', default = self.account_header)
+            gerritcli.utils.add_commmon_argument(cmd, 'format')
+
+        gerritcli.utils.add_commmon_argument(self.subcmd['search'], 'limit')
+        gerritcli.utils.add_commmon_argument(self.subcmd['search'], 'skip')
 
         # subcmd create no argument
         return
@@ -130,13 +124,13 @@ class account_command(gerritcli.maincommand):
                 self.cache_by_email[account_info.email] = account_info
         return account_info
 
-    def search_account(self, query):
+    def search_account(self, query, **kwargs):
         """
         Documentation/user-search-accounts.html#_search_operators
         """
         try:
             client = gerritcli.gerrit_server.get_client()
-            accounts_info = client.accounts.search(query)
+            accounts_info = client.accounts.search(query, **kwargs)
             accounts = list()
             for info in accounts_info:
                 account_id = info['_account_id']
@@ -161,7 +155,11 @@ class account_command(gerritcli.maincommand):
 
     def search_handler(self, args):
         header = args.header.split(',')
-        accounts = self.search_account(args.query)
+        accounts = self.search_account(
+            args.query,
+            limit = args.limit,
+            skip = args.limit
+        )
 
         gerritcli.utils.show_info(
             accounts,

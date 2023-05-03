@@ -107,3 +107,36 @@ class gerrit_info():
 
     def __getitem__(self, item):
         return self.content[item]
+
+
+def add_commmon_argument(parse, arg, **kparam):
+    param = { 'default': None, 'required': False }
+
+    if 'output' == arg:
+        param['dest'] = 'output_file'
+        param['help'] = 'output to file, not stdout'
+        param.update(kparam)
+        parse.add_argument('--output', '-o', **param)
+    elif 'header' == arg:
+        param['dest'] = 'header'
+        param['help'] = 'output header, when output format is csv / table'
+        param.update(kparam)
+        parse.add_argument('--header', **param)
+    elif 'format' == arg:
+        param['dest']    = 'format'
+        param['help']    = 'output format, json / csv / table'
+        param['default'] = 'table'
+        param.update(kparam)
+        parse.add_argument('--format', **param)
+    elif 'limit' == arg:
+        param['dest'] = 'limit'
+        param['help'] = 'limit the search result'
+        param['type'] = int
+        param.update(kparam)
+        parse.add_argument('--limit', **param)
+    elif 'skip' in arg:
+        param['dest'] = 'skip'
+        param['help'] = 'skip the number of result'
+        param['type'] = int
+        param.update(kparam)
+        parse.add_argument('--skip', **param)
