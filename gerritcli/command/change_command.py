@@ -8,31 +8,20 @@ import sys
 from copy import deepcopy
 
 
-class gerrit_change_info():
-    content = None
-
-    def __init__(self, change):
-        self.count = 0
-        self.content = deepcopy(dict())
+class gerrit_change_info(gerritcli.utils.gerrit_info):
+    def __init__(self, change, **kwargs):
         # 无需转换的内容的key
         keylist = ['project', 'branch', 'change_id', 'subject', \
                    'status', 'topic', 'id', 'insertions', 'deletions' \
                    'meta_rev_id']
         for key in keylist:
-            if key in change:
-                self.content[key] = change[key]
-            else:
-                self.content[key] = None
+            self.content[key] = change.get(key, None)
 
         # 适当的转换
         self.content['number']   = change['_number']
         self.content['created']  = utc2local(change['created'])
         self.content['updated']  = utc2local(change['updated'])
-
-        if 'submitted' in change:
-            self.content['submitted'] = utc2local(change['submitted'])
-        else:
-            self.content['submitted'] = ""
+        self.content['submitted'] = utc2local(change.get('submitted',""))
 
         cmd = account_command.get()
         owner = cmd.get_account(change['owner']['_account_id'])
@@ -49,15 +38,7 @@ class gerrit_change_info():
             self.content['submitter_id']    = ""
             self.content['submitter_name']  = ""
             self.content['submitter_email'] = ""
-
-        for key, value in self.content.items():
-            try:
-                setattr(self, key, value)
-            except AttributeError:
-                pass
-
-    def to_dict(self):
-        return self.content
+        super().__init__(**kwargs)
 
 class change_command(gerritcli.maincommand):
     """
@@ -71,11 +52,11 @@ class change_command(gerritcli.maincommand):
     def __init__(self, subparser):
         self.subcmd_info = {
             "search": {
-                "handler": self.search_get_handler,
+                "handler": self.search_handler,
                 "help": 'Queries changes visible to the caller.'
             },
             "get": {
-                "handler": self.search_get_handler,
+                "handler": self.get_handler,
                 "help": 'get change'
             },
             "create": {
@@ -123,30 +104,32 @@ class change_command(gerritcli.maincommand):
         change = client.changes.get(id).to_dict()
         return gerrit_change_info(change)
 
-    def search_get_handler(self, args):
+    def search_handler(self, args):
         header = args.header.split(",")
-        if args.output_file:
-            f = open(args.output_file, 'w')
-        else:
-            f = sys.stdout
-
         changes = list()
-        if args.subcmd == 'search':
-            for q in args.query:
-                changes += self.search_change(q)
-        elif args.subcmd == 'get':
-            for i in args.id:
-                changes.append(self.get_change(i))
-        else:
-            print("unknow subcmd %s!!!" % args.subcmd, file=sys.stderr)
-            sys.exit(1)
+        for q in args.query:
+            changes += self.search_change(q)
 
-        gerritcli.utils.show(
-            [c.to_dict() for c in changes],
-            header = header, format=args.format, file = f)
+        gerritcli.utils.show_info(
+            changes,
+            header = header,
+            filename = args.output_file,
+            format = args.format
+        )
+        return
 
-        if args.output_file:
-            f.close()
+    def get_handler(self, args):
+        header = args.header.split(",")
+        changes = list()
+        for i in args.id:
+            changes.append(self.get_change(i))
+
+        gerritcli.utils.show_info(
+            changes,
+            header = header,
+            filename = args.output_file,
+            format = args.format
+        )
         return
 
     def create_handler(self, args):
