@@ -104,3 +104,6 @@ class gerrit_info():
 
     def to_dict(self):
         return self.content
+
+    def __getitem__(self, item):
+        return self.content[item]
