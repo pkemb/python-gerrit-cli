@@ -14,9 +14,12 @@ utc_offset = datetime.fromtimestamp(now) - datetime.utcfromtimestamp(now)
 
 def utc2local(utc):
     # [0:-3] -> ns to us
-    utc_datetime = datetime.strptime(utc[0:-3], "%Y-%m-%d %H:%M:%S.%f")
-    local = utc_datetime + utc_offset
-    return local.strftime("%Y-%m-%d %H:%M:%S.%f")
+    try:
+        utc_datetime = datetime.strptime(utc[0:-3], "%Y-%m-%d %H:%M:%S.%f")
+        local = utc_datetime + utc_offset
+        return local.strftime("%Y-%m-%d %H:%M:%S.%f")
+    except ValueError:
+        return utc
 
 def show_json(data, header, file):
     print(json.dumps(data, indent=4), file=file)
