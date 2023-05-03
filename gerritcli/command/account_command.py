@@ -134,13 +134,17 @@ class account_command(gerritcli.maincommand):
         """
         Documentation/user-search-accounts.html#_search_operators
         """
-        client = gerritcli.gerrit_server.get_client()
-        accounts_info = client.accounts.search(query)
-        accounts = list()
-        for info in accounts_info:
-            account_id = info['_account_id']
-            accounts.append(self.get_account(account_id))
-        return accounts
+        try:
+            client = gerritcli.gerrit_server.get_client()
+            accounts_info = client.accounts.search(query)
+            accounts = list()
+            for info in accounts_info:
+                account_id = info['_account_id']
+                accounts.append(self.get_account(account_id))
+            return accounts
+        except gerrit.utils.exceptions.ValidationError:
+            print("query \"%s\" is invalid!!!" % query)
+            sys.exit(1)
 
     def get_handler(self, args):
         header = args.header.split(',')

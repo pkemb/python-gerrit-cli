@@ -5,6 +5,7 @@ import gerritcli
 import json
 import urllib.parse
 import sys
+import gerrit.utils.exceptions
 
 class gerrit_project_info(gerritcli.utils.gerrit_info):
     """
@@ -98,12 +99,16 @@ class project_command(gerritcli.maincommand):
         return prj_info
 
     def search_project(self, query, host, **kwargs):
-        client = gerritcli.gerrit_server.get_client()
-        projects = client.projects.search(query, **kwargs)
-        prj_info = []
-        for prj in projects:
-            prj_info.append(gerrit_project_info(prj, host))
-        return prj_info
+        try:
+            client = gerritcli.gerrit_server.get_client()
+            projects = client.projects.search(query, **kwargs)
+            prj_info = []
+            for prj in projects:
+                prj_info.append(gerrit_project_info(prj, host))
+            return prj_info
+        except gerrit.utils.exceptions.ValidationError:
+            print("query \"%s\" is invalid!!!" % query)
+            sys.exit(1)
 
     def list_handler(self, args):
         header = args.header.split(',')
