@@ -6,38 +6,67 @@ from gerritcli.command.account_command import account_command
 import gerritcli
 import sys
 from copy import deepcopy
+import gerrit.utils.exceptions
 
+empty_change = {
+    "project": "",
+    "branch": "",
+    "change_id": "",
+    "subject": "",
+    "status": "",
+    "topic": "",
+    "id": None,
+    "insertions": None,
+    "deletionsmeta_rev_id": None,
+    "number": None,
+    "created": "",
+    "updated": "",
+    "submitted": "",
+    "registered_on": "",
+    "username": "",
+    "name": "",
+    "email": "",
+    "tags": "",
+    "display_name": "",
+    "active": "",
+    "owner_id": None,
+    "owner_name": "",
+    "owner_email": "",
+    "submitter_id": None,
+    "submitter_name": "",
+    "submitter_email": ""
+}
 
 class gerrit_change_info(gerritcli.utils.gerrit_info):
+    """
+    Documentation/rest-api-changes.html#change-info
+    """
     def __init__(self, change, **kwargs):
         # 无需转换的内容的key
         keylist = ['project', 'branch', 'change_id', 'subject', \
                    'status', 'topic', 'id', 'insertions', 'deletions' \
                    'meta_rev_id']
         for key in keylist:
-            self.content[key] = change.get(key, None)
+            self.content[key] = change.get(key, empty_change[key])
 
         # 适当的转换
-        self.content['number']   = change['_number']
+        self.content['number']   = change.get('_number', empty_change['number'])
         self.content['created']  = utc2local(change['created'])
         self.content['updated']  = utc2local(change['updated'])
-        self.content['submitted'] = utc2local(change.get('submitted',""))
+        self.content['submitted'] = utc2local(change.get('submitted', empty_change['submitted']))
 
         cmd = account_command.get()
-        owner = cmd.get_account(change['owner']['_account_id'])
+        for key in ['owner', 'submitter']:
+            if key in change:
+                account = cmd.get_account(change[key]['_account_id'])
+                self.content['%s_id' % key]    = account['id']
+                self.content['%s_name' % key]  = account['username']
+                self.content['%s_email' % key] = account['email']
+            else:
+                self.content['%s_id' % key]    = empty_change['%s_id' % key]
+                self.content['%s_name' % key]  = empty_change['%s_name' % key]
+                self.content['%s_email' % key] = empty_change['%s_email' % key]
 
-        self.content['owner_id']    = owner['id']
-        self.content['owner_name']  = owner['username']
-        self.content['owner_email'] = owner['email']
-        if 'submitter' in change:
-            submitter = cmd.get_account(change['submitter']['_account_id'])
-            self.content['submitter_id']    = submitter['id']
-            self.content['submitter_name']  = submitter['username']
-            self.content['submitter_email'] = submitter['email']
-        else:
-            self.content['submitter_id']    = ""
-            self.content['submitter_name']  = ""
-            self.content['submitter_email'] = ""
         super().__init__(**kwargs)
 
 class change_command(gerritcli.maincommand):
@@ -92,17 +121,26 @@ class change_command(gerritcli.maincommand):
         return
 
     def search_change(self, query):
-        client = gerritcli.gerrit_server.get_client()
-        changes = client.changes.search(query)
-        changes_info = list()
-        for change in changes:
-            changes_info.append(gerrit_change_info(change))
-        return changes_info
+        try:
+            client = gerritcli.gerrit_server.get_client()
+            changes = client.changes.search(query)
+            changes_info = list()
+            for change in changes:
+                changes_info.append(gerrit_change_info(change))
+            return changes_info
+        except gerrit.utils.exceptions.ValidationError:
+            print("query \"%s\" is invalid!!!" % query)
+            sys.exit(1)
 
     def get_change(self, id):
-        client = gerritcli.gerrit_server.get_client()
-        change = client.changes.get(id).to_dict()
-        return gerrit_change_info(change)
+        try:
+            client = gerritcli.gerrit_server.get_client()
+            change = client.changes.get(id).to_dict()
+            return gerrit_change_info(change)
+        except gerrit.utils.exceptions.NotFoundError:
+            return gerrit_change_info(empty_change,
+                    id=id, change_id=id, number=id,
+                    subject='notfound', status='notfound', tags='notfound')
 
     def search_handler(self, args):
         header = args.header.split(",")
