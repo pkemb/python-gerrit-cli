@@ -7,7 +7,7 @@ import sys, os
 import argparse
 import gerritcli
 
-def main(argv):
+def main():
     parser = argparse.ArgumentParser()
 
     # global option
@@ -41,4 +41,4 @@ def main(argv):
     return
 
 if __name__ == "__main__":
-    sys.exit(main(sys.argv))
+    sys.exit(main())
