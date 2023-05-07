@@ -6,3 +6,4 @@ import gerritcli.command.version_command
 import gerritcli.command.project_command
 import gerritcli.command.account_command
 import gerritcli.command.change_command
+import gerritcli.command.group_command
