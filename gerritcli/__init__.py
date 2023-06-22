@@ -9,6 +9,9 @@ import gerrit
 import requests
 import gerritcli.utils
 
+__version__ = "1.0.5"
+version_string = f'gerritcli {__version__}, Written by PKEMB, Kai Peng'
+
 class gerrit_server:
     __instance = None
     gerrit_rc = os.path.join(os.environ['HOME'], '.gerrit.rc')

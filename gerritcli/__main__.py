@@ -22,6 +22,9 @@ def main():
             default=False,
             action='store_true',
             required=False)
+    parser.add_argument('--version', '-v',
+            action='version',
+            version=gerritcli.version_string)
 
     # main command
     subparser = parser.add_subparsers(help='command usage', dest='command', metavar = "command", required=True)
