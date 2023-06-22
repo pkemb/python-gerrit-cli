@@ -42,6 +42,7 @@ class gerrit_change_info(gerritcli.utils.gerrit_info):
     Documentation/rest-api-changes.html#change-info
     """
     def __init__(self, change, **kwargs):
+        self.content = deepcopy(self.content)
         # 无需转换的内容的key
         keylist = ['project', 'branch', 'change_id', 'subject', \
                    'status', 'topic', 'id', 'insertions', 'deletions' \
