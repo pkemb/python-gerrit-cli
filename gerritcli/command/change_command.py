@@ -108,16 +108,27 @@ class change_command(gerritcli.maincommand):
             gerritcli.utils.add_commmon_argument(cmd, 'header', default = self.search_default_header)
             gerritcli.utils.add_commmon_argument(cmd, 'format')
 
-        gerritcli.utils.add_commmon_argument(self.subcmd['search'], 'limit')
+        gerritcli.utils.add_commmon_argument(self.subcmd['search'], 'limit', default=0)
         gerritcli.utils.add_commmon_argument(self.subcmd['search'], 'skip')
 
         # subcmd create / delete no argument
         return
 
-    def search_change(self, query, **kwargs):
+    def search_change(self, query, options=None, limit=0, skip=0):
         try:
             client = gerritcli.gerrit_server.get_client()
-            changes = client.changes.search(query, **kwargs)
+            params = {
+                'o': options,
+                'S': skip,
+            }
+            # limit 为 0 表示没有限制
+            if limit == 0:
+                params['no-limit'] = ''
+            else:
+                params['n'] = limit
+
+            # client.changes.search() 不支持 'no-limit' 参数，所以直接使用client.get()
+            changes = client.get(f'/changes/?q={query}', params=params)
             changes_info = list()
             for change in changes:
                 changes_info.append(gerrit_change_info(change))
