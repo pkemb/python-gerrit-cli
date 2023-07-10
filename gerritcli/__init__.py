@@ -9,7 +9,7 @@ import gerrit
 import requests
 import gerritcli.utils
 
-__version__ = "1.0.5"
+__version__ = "1.0.6"
 version_string = f'gerritcli {__version__}, Written by PKEMB, Kai Peng'
 
 class gerrit_server:
